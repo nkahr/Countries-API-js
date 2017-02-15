@@ -30,6 +30,11 @@ var showAllCountries = function() {
   makeRequest(url, requestComplete);
 }
 
+// var hideCountryList = function(){
+//   var hideLi = document.getElementById('country-list');
+//   hideLi.innerHTML = "";
+// }
+
 var populateDropDown = function(url){
   var dropDown = document.getElementById("dropdown");
   var jsonString = this.responseText;
@@ -42,34 +47,67 @@ var populateDropDown = function(url){
   })
 }
 
-var displayMap = function(latitude, longitude) {
+var displayMap = function(latitude, longitude, borderingCountries) {
   var container = document.getElementById('main-map');
   console.log(container);
   var centre = {
       lat:latitude, 
       lng:longitude
     };
-  var zoom = 10;
+  var zoom = 5;
   var mainmap = new MapWrapper(centre, zoom, container);
-  mainmap.addMarker(centre);
+
+  var borderNames = [];
+  console.log("bordering countries: " + borderingCountries);
+  borderingCountries.forEach(function(country){
+    console.log("alpha 3 code: " + country.alpha3Code);
+    var name = findNameFromAlpha3Code(country);
+    borderNames.push(name);
+  })
+  console.log("border names: " + borderNames);
+  mainmap.addMarker(centre, borderNames);
 }
 
 var handleSelectChange = function(event) {
   var countryName = this.value;
+  showCurrentCountry(countryName);
+}
+
+
+var showCurrentCountry = function(countryName) {
   var currentCountry;
   countries.forEach(function(country) {
     if (country.name === countryName) {
       currentCountry = country;
-      
     }
   })
+
   var Ptag = document.getElementById("ptag");
   var savedCountry = ("country name: " + currentCountry.name + " \npopulation: " + currentCountry.population + " \ncapital city: " + currentCountry.capital);
   Ptag.innerText = savedCountry;
   saveCountry(savedCountry);
   var lat = currentCountry.latlng[0];
   var lng = currentCountry.latlng[1];
-  displayMap(lat, lng);
+  var borders = currentCountry.borders;
+  var borderingCountries = "Borders: ";
+  if (borders.length === 0) {
+    borderingCountries = "None";
+  } else {
+    borders.forEach(function(border) {
+      borderingCountries += (border + " ");
+    })
+  }
+  displayMap(lat, lng, borders);
+}
+
+var findNameFromAlpha3Code = function(a3Code) {
+  var currentCountryName;
+  countries.forEach(function(country) {
+    if (country.alpha3Code === a3Code) {
+      currentCountryName = country.name;
+    }
+  })
+  return currentCountryName;
 }
 
 var saveCountry = function(countryInfo){
@@ -85,11 +123,14 @@ var getCountry = function(){
 var app = function(){
   var url = "https://restcountries.eu/rest/v1";
   var newButton = document.getElementById('country-button');
+  // var hideButton = document.getElementById('hide-button');
   makeRequest(url, populateDropDown);
 
   getCountry();
 
   newButton.onclick = showAllCountries;
+  // hideButton.onclick = hideCountryList;
+
 
   var dropDown = document.getElementById("dropdown");
   dropDown.onchange = handleSelectChange;
